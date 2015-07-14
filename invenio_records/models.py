@@ -151,6 +151,11 @@ class RecordMetadata(db.Model):
         "version_id_col": version_id
     }
 
+    @classmethod
+    def allids(cls):
+        """Return all existing record ids."""
+        return intbitset(db.session.query(cls.id).all())
+
 
 __all__ = (
     'Record',
