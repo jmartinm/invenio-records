@@ -66,7 +66,7 @@ class Record(SmartDict):
     def __init__(self, data, model=None):
         import copy
         self.model = model
-        self.init_json = copy.deepcopy(data)
+        self.original_json = copy.deepcopy(data)
         super(Record, self).__init__(data)
 
 
