@@ -34,11 +34,7 @@ from flask_breadcrumbs import default_breadcrumb_root
 
 from flask_login import current_user
 
-from flask_menu import register_menu
-
 from invenio_base.decorators import wash_arguments
-from invenio_base.globals import cfg
-from invenio_base.i18n import _
 from invenio_base.signals import pre_template_render
 from invenio_ext.template.context_processor import \
     register_template_context_processor
@@ -48,9 +44,6 @@ from invenio_collections.decorators import check_collection
 
 from invenio_formatter import (get_output_format_content_type,
                                response_formated_records)
-
-from .signals import record_viewed
-from .utils import visible_collection_tabs
 
 blueprint = Blueprint('record', __name__, url_prefix="/record",  # FIXME
                       static_url_path='/record', template_folder='templates',
@@ -67,7 +60,6 @@ def request_record(f):
 
         from .api import get_record
         from .access import check_user_can_view_record
-        from .models import Record as Bibrec
         from invenio_records.tasks.index import get_record_index
         from invenio_records.api import Record
         from invenio.base.globals import cfg
@@ -76,7 +68,6 @@ def request_record(f):
 
         # ensure recid to be integer
         recid = int(recid)
-        g.bibrec = Bibrec.query.get(recid)
 
         # get record from db and the one from es
         db_record = get_record(recid)
@@ -146,10 +137,6 @@ def request_record(f):
 @blueprint.route('/<int:recid>/export/<of>', methods=['GET', 'POST'])
 @wash_arguments({'of': (unicode, 'hd'), 'ot': (unicode, None)})
 @request_record
-@register_menu(blueprint, 'record.metadata', _('Information'), order=1,
-               endpoint_arguments_constructor=lambda:
-               dict(recid=request.view_args.get('recid')),
-               visible_when=visible_collection_tabs('metadata'))
 def metadata(recid, of='hd', ot=None):
     """Display formated record metadata."""
     # TODO add signal support
@@ -158,22 +145,11 @@ def metadata(recid, of='hd', ot=None):
             [g.record], of, collections=g.collection
         )
 
-    # Send the signal 'document viewed'
-    record_viewed.send(
-        current_app._get_current_object(),
-        recid=recid,
-        id_user=current_user.get_id(),
-        request=request)
-
     return render_template('records/metadata.html', of=of, ot=ot)
 
 
 @blueprint.route('/<int:recid>/files', methods=['GET', 'POST'])
 @request_record
-@register_menu(blueprint, 'record.files', _('Files'), order=8,
-               endpoint_arguments_constructor=lambda:
-               dict(recid=request.view_args.get('recid')),
-               visible_when=visible_collection_tabs('files'))
 def files(recid):
     """Return overview of attached files."""
     def get_files():
